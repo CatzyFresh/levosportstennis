@@ -1,0 +1,2 @@
+"use client";import { useParams } from "next/navigation";import { useAppStore } from "@/store/useAppStore";
+export default function(){const {id}=useParams<{id:string}>();const s=useAppStore();const t=s.tournaments.find(x=>x.id===id);const m=s.tournamentMatches.filter(x=>x.tournamentId===id);if(!t)return <p>Not found</p>;return <div><h2 className="text-xl">{t.name}</h2>{m.map(x=><div key={x.id}>{x.playerId} vs {x.opponentName} {x.score} ({x.result})</div>)}</div>}
