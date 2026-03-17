@@ -1,29 +1,85 @@
 "use client";
-import { DataTable } from "@/components/data-table";
-import { EditModal } from "@/components/edit-modal";
-import { id } from "@/lib/client";
-import { Player } from "@/types/models";
-import { useAppStore } from "@/store/useAppStore";
+
+import Link from "next/link";
 import { useState } from "react";
+import { useAppStore } from "@/store/useAppStore";
+
+const LEVEL_OPTIONS = ["Beginner", "Intermediate", "Advanced", "Professional", "Members"] as const;
 
 export default function PlayersPage() {
-  const { players, addPlayer, updatePlayer, deletePlayer } = useAppStore();
-  const [name, setName] = useState("");
-  const [editing, setEditing] = useState<Player | null>(null);
+  const { players, updatePlayer, deletePlayer } = useAppStore();
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [draftName, setDraftName] = useState("");
+  const [draftLevel, setDraftLevel] = useState<(typeof LEVEL_OPTIONS)[number]>("Beginner");
 
-  return <div className="space-y-4">
-    <h2 className="text-2xl font-bold">Players</h2>
-    <div className="bg-card p-3 rounded border border-slate-800 flex gap-2"><input placeholder="Quick add player" value={name} onChange={(e) => setName(e.target.value)} /><button className="bg-cyan-600 px-3 rounded" onClick={() => { if (!name) return; addPlayer({ id: id("P"), fullName: name, active: true, createdAt: new Date().toISOString().slice(0,10) }); setName(""); }}>Add</button></div>
-    <DataTable headers={["ID", "Name", "Age", "Category", "Hand", "Actions"]} rows={players.map((p) => [p.id, p.fullName, p.age ?? "-", p.category ?? "-", p.handedness ?? "-", <div key={p.id} className="flex gap-2"><button className="text-cyan-300" onClick={() => setEditing(p)}>Edit</button><button className="text-red-300" onClick={() => deletePlayer(p.id)}>Delete</button></div>])} />
+  return (
+    <div>
+      <div className="flex justify-between">
+        <h2 className="text-xl font-semibold">Players</h2>
+        <Link href="/players/new" className="underline">
+          Add player
+        </Link>
+      </div>
 
-    <EditModal open={!!editing} title="Edit player" onClose={() => setEditing(null)}>
-      {editing && <div className="grid grid-cols-2 gap-2">
-        <input value={editing.fullName} onChange={(e) => setEditing({ ...editing, fullName: e.target.value })} placeholder="Full name" />
-        <input type="number" value={editing.age ?? ""} onChange={(e) => setEditing({ ...editing, age: e.target.value ? Number(e.target.value) : undefined })} placeholder="Age" />
-        <input value={editing.category ?? ""} onChange={(e) => setEditing({ ...editing, category: e.target.value || undefined })} placeholder="Category" />
-        <input value={editing.handedness ?? ""} onChange={(e) => setEditing({ ...editing, handedness: e.target.value || undefined })} placeholder="Handedness" />
-        <div className="col-span-2 flex justify-end gap-2"><button className="bg-slate-700 px-3 py-1 rounded" onClick={() => setEditing(null)}>Cancel</button><button className="bg-cyan-600 px-3 py-1 rounded" onClick={() => { updatePlayer(editing); setEditing(null); }}>Save</button></div>
-      </div>}
-    </EditModal>
-  </div>;
+      <div className="mt-3 space-y-2">
+        {players.map((player) => {
+          const isEditing = editingId === player.id;
+          return (
+            <div key={player.id} className="rounded border border-slate-800 p-3">
+              {isEditing ? (
+                <div className="space-y-2">
+                  <input className="w-full rounded border border-slate-700 bg-slate-900 p-2" value={draftName} onChange={(e) => setDraftName(e.target.value)} />
+                  <select className="w-full rounded border border-slate-700 bg-slate-900 p-2" value={draftLevel} onChange={(e) => setDraftLevel(e.target.value as (typeof LEVEL_OPTIONS)[number])}>
+                    {LEVEL_OPTIONS.map((lvl) => (
+                      <option key={lvl} value={lvl}>
+                        {lvl}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="space-x-2">
+                    <button
+                      className="rounded bg-cyan-600 px-2 py-1"
+                      onClick={() => {
+                        updatePlayer({ ...player, fullName: draftName, skillLevel: draftLevel });
+                        setEditingId(null);
+                      }}
+                    >
+                      Save
+                    </button>
+                    <button className="rounded border border-slate-700 px-2 py-1" onClick={() => setEditingId(null)}>
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between gap-2">
+                  <div>
+                    <Link className="underline" href={`/players/${player.id}`}>
+                      {player.fullName}
+                    </Link>
+                    <p className="text-sm text-slate-400">Level: {player.skillLevel ?? "-"}</p>
+                  </div>
+                  <div className="space-x-2">
+                    <button
+                      className="rounded border border-slate-700 px-2 py-1"
+                      onClick={() => {
+                        setEditingId(player.id);
+                        setDraftName(player.fullName);
+                        setDraftLevel((player.skillLevel as (typeof LEVEL_OPTIONS)[number]) ?? "Beginner");
+                      }}
+                    >
+                      Edit
+                    </button>
+                    <button className="rounded bg-rose-700 px-2 py-1" onClick={() => deletePlayer(player.id)}>
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
 }
