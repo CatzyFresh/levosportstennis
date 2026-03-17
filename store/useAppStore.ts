@@ -82,4 +82,4 @@ export const useAppStore = create<AppState>()(
   )
 );
 
-export const getCurrentUser = (users: User[], currentUserId: string) => users.find((u) => u.id === currentUserId) ?? users[0];
+export const getCurrentUser = (users: User[], currentUserId: string): User | undefined => users.find((u) => u.id === currentUserId) ?? users[0];

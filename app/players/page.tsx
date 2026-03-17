@@ -4,11 +4,13 @@ import Link from "next/link";
 import { useState } from "react";
 import { useAppStore } from "@/store/useAppStore";
 
+const LEVEL_OPTIONS = ["Beginner", "Intermediate", "Advanced", "Professional", "Members"] as const;
+
 export default function PlayersPage() {
   const { players, updatePlayer, deletePlayer } = useAppStore();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draftName, setDraftName] = useState("");
-  const [draftLevel, setDraftLevel] = useState("");
+  const [draftLevel, setDraftLevel] = useState<(typeof LEVEL_OPTIONS)[number]>("Beginner");
 
   return (
     <div>
@@ -27,7 +29,13 @@ export default function PlayersPage() {
               {isEditing ? (
                 <div className="space-y-2">
                   <input className="w-full rounded border border-slate-700 bg-slate-900 p-2" value={draftName} onChange={(e) => setDraftName(e.target.value)} />
-                  <input className="w-full rounded border border-slate-700 bg-slate-900 p-2" value={draftLevel} onChange={(e) => setDraftLevel(e.target.value)} placeholder="Skill level" />
+                  <select className="w-full rounded border border-slate-700 bg-slate-900 p-2" value={draftLevel} onChange={(e) => setDraftLevel(e.target.value as (typeof LEVEL_OPTIONS)[number])}>
+                    {LEVEL_OPTIONS.map((lvl) => (
+                      <option key={lvl} value={lvl}>
+                        {lvl}
+                      </option>
+                    ))}
+                  </select>
                   <div className="space-x-2">
                     <button
                       className="rounded bg-cyan-600 px-2 py-1"
@@ -57,7 +65,7 @@ export default function PlayersPage() {
                       onClick={() => {
                         setEditingId(player.id);
                         setDraftName(player.fullName);
-                        setDraftLevel(player.skillLevel ?? "");
+                        setDraftLevel((player.skillLevel as (typeof LEVEL_OPTIONS)[number]) ?? "Beginner");
                       }}
                     >
                       Edit
