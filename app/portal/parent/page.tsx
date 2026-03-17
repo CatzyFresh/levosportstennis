@@ -1,0 +1,20 @@
+"use client";
+
+import { getCurrentUser, useAppStore } from "@/store/useAppStore";
+
+export default function ParentPortalPage() {
+  const s = useAppStore();
+  const u = getCurrentUser(s.users, s.currentUserId);
+  const pid = u?.linkedPlayerIds?.[0];
+  const p = s.players.find((x) => x.id === pid);
+
+  if (!p) return <p>No linked child profile.</p>;
+
+  return (
+    <div>
+      <h2 className="text-xl">Parent Portal</h2>
+      <p>Child: {p.fullName}</p>
+      <p>Tournaments: {s.tournamentMatches.filter((m) => m.playerId === p.id).length}</p>
+    </div>
+  );
+}
