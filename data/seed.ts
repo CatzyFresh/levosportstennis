@@ -31,6 +31,10 @@ export const workbookSeed: AppData = {
     { id: "A-3", date: "2026-03-16", playerId: "P-3", coachId: "C-2", batchId: "B-2", status: "absent" },
     { id: "A-4", date: "2026-03-16", playerId: "P-4", coachId: "C-2", batchId: "B-2", status: "present" }
   ],
+  dayLogs: [
+    { id: "D-1", date: "2026-03-16", rain: false, weatherNote: "Sunny, warm conditions", dayNote: "Normal training day" },
+    { id: "D-2", date: "2026-03-20", rain: true, weatherNote: "Light rain in evening", dayNote: "Tournament start delayed by 30 mins" }
+  ],
   inventoryItems: [
     { id: "I-1", name: "Wilson US Open Balls", category: "Tennis balls", sku: "BALL-001", stock: 18, unit: "can", reorderLevel: 20, supplier: "Ace Sports", cost: 350 },
     { id: "I-2", name: "Overgrip Pro", category: "Overgrips", sku: "GRIP-009", stock: 60, unit: "piece", reorderLevel: 25, supplier: "SpinTrade", cost: 75 }

@@ -1,6 +1,6 @@
 "use client";
 import { workbookSeed } from "@/data/seed";
-import { AppData, AttendanceEntry, Coach, Goal, InventoryItem, InventoryTransaction, PerformanceReview, Player, Role, Tournament, TournamentMatch, User } from "@/types/models";
+import { AppData, AttendanceEntry, Coach, DayLog, Goal, InventoryItem, InventoryTransaction, PerformanceReview, Player, Role, Tournament, TournamentMatch, User } from "@/types/models";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
@@ -13,7 +13,10 @@ type AppState = AppData & {
   updateCoach: (v: Coach) => void;
   deleteCoach: (id: string) => void;
   addAttendance: (v: AttendanceEntry) => void;
+  upsertDayLog: (v: DayLog) => void;
   addInventoryItem: (v: InventoryItem) => void;
+  updateInventoryItem: (v: InventoryItem) => void;
+  deleteInventoryItem: (id: string) => void;
   addInventoryTransaction: (v: InventoryTransaction) => void;
   addPerformanceReview: (v: PerformanceReview) => void;
   addTournament: (v: Tournament) => void;
@@ -52,8 +55,23 @@ export const useAppStore = create<AppState>()(
           }))
         })),
       addAttendance: (v) => set((s) => ({ attendance: [v, ...s.attendance] })),
+      upsertDayLog: (v) => set((s) => ({ dayLogs: s.dayLogs.some((d) => d.date === v.date) ? s.dayLogs.map((d) => (d.date === v.date ? { ...d, ...v } : d)) : [v, ...s.dayLogs] })),
       addInventoryItem: (v) => set((s) => ({ inventoryItems: [v, ...s.inventoryItems] })),
-      addInventoryTransaction: (v) => set((s) => ({ inventoryTransactions: [v, ...s.inventoryTransactions] })),
+      updateInventoryItem: (v) => set((s) => ({ inventoryItems: s.inventoryItems.map((i) => (i.id === v.id ? v : i)) })),
+      deleteInventoryItem: (id) =>
+        set((s) => ({
+          inventoryItems: s.inventoryItems.filter((i) => i.id !== id),
+          inventoryTransactions: s.inventoryTransactions.filter((t) => t.itemId !== id)
+        })),
+      addInventoryTransaction: (v) =>
+        set((s) => ({
+          inventoryTransactions: [v, ...s.inventoryTransactions],
+          inventoryItems: s.inventoryItems.map((item) => {
+            if (item.id !== v.itemId) return item;
+            const delta = v.type === "in" ? v.quantity : v.type === "out" ? -v.quantity : v.quantity;
+            return { ...item, stock: Math.max(0, item.stock + delta) };
+          })
+        })),
       addPerformanceReview: (v) => set((s) => ({ performanceReviews: [v, ...s.performanceReviews] })),
       addTournament: (v) => set((s) => ({ tournaments: [v, ...s.tournaments] })),
       addTournamentMatch: (v) => set((s) => ({ tournamentMatches: [v, ...s.tournamentMatches] })),

@@ -60,6 +60,14 @@ export type AttendanceEntry = {
   remarks?: string;
 };
 
+export type DayLog = {
+  id: string;
+  date: string;
+  rain: boolean;
+  weatherNote?: string;
+  dayNote?: string;
+};
+
 export type InventoryItem = {
   id: string;
   name: string;
@@ -144,6 +152,7 @@ export type AppData = {
   batches: Batch[];
   players: Player[];
   attendance: AttendanceEntry[];
+  dayLogs: DayLog[];
   inventoryItems: InventoryItem[];
   inventoryTransactions: InventoryTransaction[];
   performanceReviews: PerformanceReview[];
