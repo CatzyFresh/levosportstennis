@@ -1,76 +1,63 @@
-# Levo Sports Tennis MVP
+# Levo Sports Academy Manager
 
-Upgraded coaching/admin app with editable records, safe data tools, and in-website Excel import.
+Production-oriented Next.js application for managing tennis academy attendance, inventory, player performance, tournaments, and role-specific portals.
 
-## Run locally
+## Setup
 
 ```bash
 npm install
 npm run dev
-npm run build
 ```
 
-## What was upgraded
+## Included modules
 
-### 1) Edit existing entries (all core entities)
-You can now edit and delete existing rows from these pages:
-- Players
-- Attendance
-- Session Log
-- Skill Metrics
-- Match Data
-- Tournaments
-- Goals
+- Authentication-ready role model (Super Admin/Admin/Head Coach/Coach/Store Manager/Player/Parent)
+- Attendance management + quick marking + WhatsApp text generator
+- Player and coach management
+- Inventory + transaction + low-stock pages
+- Performance review tracking + progress screen
+- Tournament list/create/detail and player history support
+- Admin settings and reset tooling
+- Player and parent portal views
 
-Each row has **Edit** + **Delete** actions. Edit opens a modal form and persists to localStorage.
+## Architecture decisions
 
-### 2) Data tools (safe destructive actions)
-In **Settings / Data Tools**:
-- **Clear All Data** (with confirmation)
-- **Reset to Demo Data** (with confirmation)
-- **Export JSON Backup**
-- **Import JSON Backup**
-- **Regenerate derived match data**
+- **UI:** Next.js App Router + Tailwind
+- **State:** Centralized Zustand store with persist middleware
+- **Validation pattern:** Form-level required checks + typed entities in `types/models.ts`
+- **Reporting:** Reusable report utility in `lib/report.ts`
+- **RBAC foundation:** Role-permission policy map in `store/useAppStore.ts`
+- **Production DB target:** Prisma + PostgreSQL blueprint in `prisma/schema.prisma`
 
-### 3) Direct Excel upload inside website
-In **Settings / Data Tools**:
-1. Choose `.xlsx` file
-2. App parses workbook client-side using SheetJS (`xlsx`)
-3. App detects sheet names robustly (best-fit matching)
-4. App maps workbook rows to internal entities
-5. Import preview is shown (detected sheets, row counts, entity counts, warnings)
-6. Click **Confirm Import** to save
-7. Analytics/derived data recompute automatically
+## Environment
 
-## Import pipeline modules
-- `lib/import/parseWorkbook.ts` → reads file to workbook
-- `lib/import/detectSheets.ts` → robust sheet detection
-- `lib/import/mapWorkbookToAppData.ts` → maps workbook to app data + preview
-- `lib/import/validateImport.ts` → import warnings
-- `lib/workbookMapper.ts` → detailed row/column mapping to app entities
+Copy `.env.example` to `.env.local` and update secrets.
 
-## Workbook mapping assumptions
-### Player Profile
-Maps player id/name/age/category/hand/style/strengths/weaknesses/notes.
+## Seed data
 
-### Session Log (primary source of truth)
-Maps date, session, player, activity/drill, duration, opponent, score, result, consistency/accuracy, notes.
-If session rows reference players not in player profile, missing players are auto-created.
+Seeded tennis-academy-like data is in `data/seed.ts` and loaded automatically in first run.
 
-### Skill Metrics
-Maps player/date/type/value/unit/context/notes.
+## Deployment (Vercel)
 
-### Match Data
-Imported manual matches are preserved, while derived matches are still generated from Session Log.
-Duplicate match rows are deduplicated by date/player/opponent/score key.
+1. Push repository to GitHub.
+2. Import project in Vercel.
+3. Set environment variables from `.env.example`.
+4. Build command: `npm run build`.
+5. Output: Next.js default.
 
-### Performance Dashboard
-Used only as reference (not source-of-truth). App recomputes insights from source entities.
+## Migration steps for production DB
 
-## Derived analytics behavior
-- Session Log edits/add/delete automatically trigger match regeneration
-- Win %, rankings, head-to-head, progress charts, and dashboard recompute from store state
-- Rankings formula remains: **60% win% + 25% recent form + 15% activity**
+1. Expand `prisma/schema.prisma` with complete relations.
+2. Run `npx prisma migrate dev` locally.
+3. Run `npx prisma db seed`.
+4. Deploy migrations in CI before promoting release.
 
-## Deployment
-Deploy directly to Vercel (Next.js defaults, no extra setup).
+## Next-phase enhancements
+
+- Payments/fees
+- Court booking
+- Equipment issue tracking
+- Announcements center
+- Coach payroll
+- Notification system (email/WhatsApp)
+- Mobile app (React Native)
