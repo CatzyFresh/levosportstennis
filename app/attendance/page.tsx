@@ -1,33 +1,123 @@
 "use client";
-import { DataTable } from "@/components/data-table";
-import { EditModal } from "@/components/edit-modal";
-import { id } from "@/lib/client";
-import { AttendanceEntry } from "@/types/models";
-import { useAppStore } from "@/store/useAppStore";
-import { useState } from "react";
 
-export default function AttendancePage() {
-  const { players, attendance, addAttendance, updateAttendance, deleteAttendance } = useAppStore();
-  const [playerId, setPlayerId] = useState(players[0]?.id ?? "");
-  const [date, setDate] = useState("2026-09-05");
-  const [sessionType, setSessionType] = useState("morning");
-  const [editing, setEditing] = useState<AttendanceEntry | null>(null);
-  return <div className="space-y-4"><h2 className="text-2xl font-bold">Attendance</h2>
-  <div className="bg-card p-3 rounded border border-slate-800 flex flex-wrap gap-2 items-center">
-    <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-    <select value={sessionType} onChange={(e) => setSessionType(e.target.value)}><option>morning</option><option>evening</option><option>fitness</option><option>match</option><option>other</option></select>
-    <select value={playerId} onChange={(e) => setPlayerId(e.target.value)}>{players.map((p) => <option key={p.id} value={p.id}>{p.fullName}</option>)}</select>
-    <button className="bg-cyan-600 px-3 py-1 rounded" onClick={() => addAttendance({ id: id("AT"), date, sessionType: sessionType as any, playerId, present: true })}>Mark Present</button>
-  </div>
-  <DataTable headers={["Date", "Session", "Player", "Present", "Actions"]} rows={attendance.map((a) => [a.date, a.sessionType, players.find((p) => p.id === a.playerId)?.fullName ?? a.playerId, a.present ? "Yes" : "No", <div key={a.id} className="flex gap-2"><button className="text-cyan-300" onClick={() => setEditing(a)}>Edit</button><button className="text-red-300" onClick={() => deleteAttendance(a.id)}>Delete</button></div>])} />
-  <EditModal open={!!editing} title="Edit attendance" onClose={() => setEditing(null)}>
-    {editing && <div className="grid gap-2">
-      <input type="date" value={editing.date} onChange={(e) => setEditing({ ...editing, date: e.target.value })} />
-      <select value={editing.sessionType} onChange={(e) => setEditing({ ...editing, sessionType: e.target.value as any })}><option>morning</option><option>evening</option><option>fitness</option><option>match</option><option>other</option></select>
-      <select value={editing.playerId} onChange={(e) => setEditing({ ...editing, playerId: e.target.value })}>{players.map((p) => <option key={p.id} value={p.id}>{p.fullName}</option>)}</select>
-      <label className="text-sm"><input type="checkbox" checked={editing.present} onChange={(e) => setEditing({ ...editing, present: e.target.checked })} /> Present</label>
-      <div className="flex justify-end gap-2"><button className="bg-slate-700 px-3 py-1 rounded" onClick={() => setEditing(null)}>Cancel</button><button className="bg-cyan-600 px-3 py-1 rounded" onClick={() => { updateAttendance(editing); setEditing(null); }}>Save</button></div>
-    </div>}
-  </EditModal>
-  </div>;
+import { useMemo, useState } from "react";
+import { useAppStore } from "@/store/useAppStore";
+
+const WEEK = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+function iso(d: Date) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function inTournament(date: string, startDate: string, endDate?: string) {
+  const d = new Date(date).getTime();
+  const s = new Date(startDate).getTime();
+  const e = new Date(endDate ?? startDate).getTime();
+  return d >= s && d <= e;
+}
+
+export default function AttendanceCalendarPage() {
+  const { attendance, players, tournaments, dayLogs, upsertDayLog } = useAppStore();
+  const [viewDate, setViewDate] = useState(new Date("2026-03-01"));
+  const [selectedDate, setSelectedDate] = useState("2026-03-16");
+
+  const y = viewDate.getFullYear();
+  const m = viewDate.getMonth();
+  const first = new Date(y, m, 1);
+  const startOffset = first.getDay();
+  const daysInMonth = new Date(y, m + 1, 0).getDate();
+
+  const cells = useMemo(() => {
+    const arr: (Date | null)[] = [];
+    for (let i = 0; i < startOffset; i += 1) arr.push(null);
+    for (let d = 1; d <= daysInMonth; d += 1) arr.push(new Date(y, m, d));
+    while (arr.length % 7 !== 0) arr.push(null);
+    return arr;
+  }, [daysInMonth, m, startOffset, y]);
+
+  const selectedRows = attendance.filter((a) => a.date === selectedDate);
+  const presentIds = selectedRows.filter((r) => r.status === "present" || r.status === "late").map((r) => r.playerId);
+  const absentIds = players.filter((p) => !presentIds.includes(p.id)).map((p) => p.id);
+  const selectedTournaments = tournaments.filter((t) => inTournament(selectedDate, t.startDate, t.endDate));
+  const selectedLog = dayLogs.find((d) => d.date === selectedDate);
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-semibold">Attendance + Operations Calendar</h2>
+        <div className="space-x-2">
+          <button className="rounded border border-slate-700 px-2 py-1" onClick={() => setViewDate(new Date(y, m - 1, 1))}>
+            Prev
+          </button>
+          <span className="text-sm text-slate-300">{viewDate.toLocaleString("en-US", { month: "long", year: "numeric" })}</span>
+          <button className="rounded border border-slate-700 px-2 py-1" onClick={() => setViewDate(new Date(y, m + 1, 1))}>
+            Next
+          </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-7 gap-2 text-center text-xs text-slate-400">
+        {WEEK.map((w) => (
+          <div key={w}>{w}</div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-7 gap-2">
+        {cells.map((d, idx) => {
+          if (!d) return <div key={idx} className="h-20 rounded border border-slate-900 bg-slate-950" />;
+          const day = iso(d);
+          const rows = attendance.filter((a) => a.date === day);
+          const dayTournament = tournaments.some((t) => inTournament(day, t.startDate, t.endDate));
+          const dayRain = dayLogs.find((x) => x.date === day)?.rain;
+          return (
+            <button
+              key={day}
+              onClick={() => setSelectedDate(day)}
+              className={`h-20 rounded border p-2 text-left ${selectedDate === day ? "border-cyan-500 bg-slate-800" : "border-slate-800 bg-slate-900"}`}
+            >
+              <div className="text-sm font-semibold">{d.getDate()}</div>
+              <div className="text-[11px] text-slate-400">{rows.length} marked</div>
+              <div className="text-[11px]">{dayTournament ? "🎾 Tournament" : ""}</div>
+              <div className="text-[11px]">{dayRain ? "🌧️ Rain" : ""}</div>
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="grid gap-4 rounded border border-slate-800 bg-slate-900 p-4 md:grid-cols-2">
+        <div>
+          <h3 className="font-semibold">{selectedDate} Details</h3>
+          <p className="mt-1 text-sm">Present/Late: {presentIds.map((id) => players.find((p) => p.id === id)?.fullName ?? id).join(", ") || "-"}</p>
+          <p className="mt-1 text-sm">Not attended: {absentIds.map((id) => players.find((p) => p.id === id)?.fullName ?? id).join(", ") || "-"}</p>
+          <p className="mt-1 text-sm">Tournaments: {selectedTournaments.map((t) => t.name).join(", ") || "None"}</p>
+          <p className="mt-1 text-sm">Weather: {selectedLog?.rain ? "Rain" : "No rain"} {selectedLog?.weatherNote ? `(${selectedLog.weatherNote})` : ""}</p>
+          <p className="mt-1 text-sm">Day Note: {selectedLog?.dayNote ?? "-"}</p>
+        </div>
+
+        <form
+          key={selectedDate}
+          className="space-y-2"
+          onSubmit={(e) => {
+            e.preventDefault();
+            const fd = new FormData(e.currentTarget);
+            upsertDayLog({
+              id: selectedLog?.id ?? `D-${Date.now()}`,
+              date: selectedDate,
+              rain: fd.get("rain") === "on",
+              weatherNote: String(fd.get("weatherNote") ?? ""),
+              dayNote: String(fd.get("dayNote") ?? "")
+            });
+          }}
+        >
+          <h4 className="font-semibold">Update Day Info</h4>
+          <label className="flex items-center gap-2 text-sm">
+            <input name="rain" type="checkbox" defaultChecked={selectedLog?.rain} /> Rain on this day
+          </label>
+          <input name="weatherNote" defaultValue={selectedLog?.weatherNote ?? ""} className="w-full rounded border border-slate-700 bg-slate-950 p-2" placeholder="Weather note" />
+          <textarea name="dayNote" defaultValue={selectedLog?.dayNote ?? ""} className="w-full rounded border border-slate-700 bg-slate-950 p-2" placeholder="What happened today?" rows={3} />
+          <button className="rounded bg-cyan-600 px-3 py-2">Save Day Log</button>
+        </form>
+      </div>
+    </div>
+  );
 }
