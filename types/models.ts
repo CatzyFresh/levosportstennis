@@ -12,6 +12,7 @@ export type User = {
 export type Coach = {
   id: string;
   name: string;
+  role: "head_coach" | "coach" | "assistant_coach";
   phone?: string;
   specialization?: string;
   active: boolean;

@@ -61,3 +61,19 @@ Seeded tennis-academy-like data is in `data/seed.ts` and loaded automatically in
 - Coach payroll
 - Notification system (email/WhatsApp)
 - Mobile app (React Native)
+
+## Admin authentication
+
+- Middleware now protects all app routes except `/login` and `/forgot-password`.
+- Only Admin / Super Admin credentials can create an authenticated session.
+- Demo credentials:
+  - `admin@levo.app` / `Admin@123`
+  - `superadmin@levo.app` / `Admin@123`
+
+## Admin management controls
+
+Admins can now:
+- Edit coach names and coach roles
+- Delete coaches
+- Edit player names and player levels
+- Delete players

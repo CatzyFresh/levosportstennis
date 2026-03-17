@@ -12,8 +12,8 @@ export const workbookSeed: AppData = {
     { id: "U-7", name: "Parent of Arya", email: "parent.arya@levo.app", role: "parent", linkedPlayerIds: ["P-4"] }
   ],
   coaches: [
-    { id: "C-1", name: "Elan", specialization: "High performance", phone: "+91-900000001", active: true },
-    { id: "C-2", name: "Stephen", specialization: "Junior development", phone: "+91-900000002", active: true }
+    { id: "C-1", name: "Elan", role: "head_coach", specialization: "High performance", phone: "+91-900000001", active: true },
+    { id: "C-2", name: "Stephen", role: "coach", specialization: "Junior development", phone: "+91-900000002", active: true }
   ],
   batches: [
     { id: "B-1", name: "Elite U18", level: "Advanced", schedule: "Mon-Fri 6:00 AM", primaryCoachId: "C-1" },
