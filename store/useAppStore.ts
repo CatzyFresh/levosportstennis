@@ -1,6 +1,6 @@
 "use client";
 import { workbookSeed } from "@/data/seed";
-import { AppData, AttendanceEntry, Coach, DayLog, Goal, InventoryItem, InventoryTransaction, PerformanceReview, Player, Role, Tournament, TournamentMatch, User } from "@/types/models";
+import { AppData, AttendanceEntry, Coach, DayLog, Goal, InventoryItem, InventoryTransaction, PerformanceReview, Player, PlayerPurchase, Role, Tournament, TournamentMatch, User } from "@/types/models";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
@@ -18,6 +18,9 @@ type AppState = AppData & {
   updateInventoryItem: (v: InventoryItem) => void;
   deleteInventoryItem: (id: string) => void;
   addInventoryTransaction: (v: InventoryTransaction) => void;
+  addPlayerPurchase: (v: PlayerPurchase) => void;
+  updatePlayerPurchase: (v: PlayerPurchase) => void;
+  deletePlayerPurchase: (id: string) => void;
   addPerformanceReview: (v: PerformanceReview) => void;
   addTournament: (v: Tournament) => void;
   addTournamentMatch: (v: TournamentMatch) => void;
@@ -39,6 +42,7 @@ export const useAppStore = create<AppState>()(
   persist(
     (set) => ({
       ...workbookSeed,
+      playerPurchases: (workbookSeed as AppData).playerPurchases ?? [],
       setCurrentUser: (id) => set(() => ({ currentUserId: id })),
       addPlayer: (v) => set((s) => ({ players: [v, ...s.players] })),
       updatePlayer: (v) => set((s) => ({ players: s.players.map((p) => (p.id === v.id ? v : p)) })),
@@ -72,11 +76,14 @@ export const useAppStore = create<AppState>()(
             return { ...item, stock: Math.max(0, item.stock + delta) };
           })
         })),
+      addPlayerPurchase: (v) => set((s) => ({ playerPurchases: [v, ...s.playerPurchases] })),
+      updatePlayerPurchase: (v) => set((s) => ({ playerPurchases: s.playerPurchases.map((p) => (p.id === v.id ? v : p)) })),
+      deletePlayerPurchase: (id) => set((s) => ({ playerPurchases: s.playerPurchases.filter((p) => p.id !== id) })),
       addPerformanceReview: (v) => set((s) => ({ performanceReviews: [v, ...s.performanceReviews] })),
       addTournament: (v) => set((s) => ({ tournaments: [v, ...s.tournaments] })),
       addTournamentMatch: (v) => set((s) => ({ tournamentMatches: [v, ...s.tournamentMatches] })),
       addGoal: (v) => set((s) => ({ goals: [v, ...s.goals] })),
-      resetDemoData: () => set(() => ({ ...workbookSeed }))
+      resetDemoData: () => set(() => ({ ...workbookSeed, playerPurchases: [] }))
     }),
     { name: "levo-sports-academy-store" }
   )
