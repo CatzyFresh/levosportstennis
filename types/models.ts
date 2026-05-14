@@ -90,6 +90,16 @@ export type InventoryTransaction = {
   actor?: string;
 };
 
+export type PlayerPurchase = {
+  id: string;
+  playerId: string;
+  itemName: string;
+  quantity: number;
+  price: number;
+  date: string;
+  notes?: string;
+};
+
 export type PerformanceReview = {
   id: string;
   playerId: string;
@@ -155,6 +165,7 @@ export type AppData = {
   dayLogs: DayLog[];
   inventoryItems: InventoryItem[];
   inventoryTransactions: InventoryTransaction[];
+  playerPurchases: PlayerPurchase[];
   performanceReviews: PerformanceReview[];
   tournaments: Tournament[];
   tournamentMatches: TournamentMatch[];
